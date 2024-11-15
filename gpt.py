@@ -53,7 +53,7 @@ def estimate_loss():
         out[split] = losses.mean()
     model.train()
     return out
-    
+
 class Head(nn.Module):
     """ one head of self-attention """
 
@@ -92,6 +92,18 @@ class MultiHeadAttention(nn.Module):
     def forward(self, x):
         return torch.cat([h(x) for h in self.heads], dim=-1)
 
+class FeedFoward(nn.Module):
+    """ a simple linear layer followed by a non-linearity """
+
+    def __init__(self, n_embd):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(n_embd, n_embd),
+            nn.ReLU(),
+        )
+
+    def forward(self, x):
+        return self.net(x)
 
 
 class GPTLanguageModel(nn.Module):
@@ -100,6 +112,7 @@ class GPTLanguageModel(nn.Module):
         self.token_embedding_table = nn.Embedding(vocab_size, n_embd)
         self.position_embedding_table = nn.Embedding(block_size, n_embd)
         self.sa_heads = MultiHeadAttention(4, n_embd//4)
+        self.ffwd = FeedFoward(n_embd)
         self.lm_head = nn.Linear(n_embd, vocab_size)
 
     def forward(self, idx, targets=None):
@@ -108,6 +121,7 @@ class GPTLanguageModel(nn.Module):
         pos_emb = self.position_embedding_table(torch.arange(T, device=device))
         x = tok_emb + pos_emb
         x = self.sa_heads(x)
+        x = self.ffwd(x)
         logits = self.lm_head(x)
         
         if targets is None:
@@ -147,11 +161,11 @@ for iter in range(max_iters):
 
 context = torch.zeros((1, 1), dtype=torch.long, device=device)
 generated_text = decode(m.generate(context, max_new_tokens=500)[0].tolist())
+
 print("\n")
 print(generated_text)
-print("\n")
-# Save the generated text to milestone2.txt
-with open("milestone4.txt", "w") as f:
+print("\n") 
+with open("milestone5.txt", "w") as f:
     f.write(generated_text)
 
-print("Generated text saved to milestone4.txt")
+print("Generated text saved to milestone5.txt")
