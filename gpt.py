@@ -120,11 +120,13 @@ class Block(nn.Module):
         head_size = n_embd // n_head
         self.sa = MultiHeadAttention(n_head, head_size)
         self.ffwd = FeedFoward(n_embd)
+        self.ln1 = nn.LayerNorm(n_embd)
+        self.ln2 = nn.LayerNorm(n_embd)
        
 
     def forward(self, x):
-        x = x + self.sa(x)
-        x = x + self.ffwd(x)
+        x = x + self.sa(self.ln1(x))
+        x = x + self.ffwd(self.ln2(x))
         return x
     
 
@@ -136,7 +138,8 @@ class GPTLanguageModel(nn.Module):
         self.blocks = nn.Sequential(
             Block(n_embd, n_head = 4),
             Block(n_embd, n_head = 4),
-            Block(n_embd, n_head = 4)
+            Block(n_embd, n_head = 4),
+            nn.LayerNorm(n_embd)
         )
         self.lm_head = nn.Linear(n_embd, vocab_size)
 
@@ -188,8 +191,7 @@ generated_text = decode(m.generate(context, max_new_tokens=500)[0].tolist())
 print("\n")
 print(generated_text)
 print("\n") 
-with open("milestone6.txt", "w") as f:
+with open("milestone7.txt", "w") as f:
     f.write(generated_text)
 
-print("Generated text saved to milestone6.txt")
- 
+print("Generated text saved to milestone7.txt")
