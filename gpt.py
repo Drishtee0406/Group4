@@ -82,12 +82,24 @@ class Head(nn.Module):
         out = wei @ v # (B, T, T) @ (B, T, hs) -> (B, T, hs)
         return out
     
+class MultiHeadAttention(nn.Module):
+    """ multiple heads of self-attention in parallel """
+
+    def __init__(self, num_heads, head_size):
+        super().__init__()
+        self.heads = nn.ModuleList([Head(head_size) for _ in range(num_heads)])
+
+    def forward(self, x):
+        return torch.cat([h(x) for h in self.heads], dim=-1)
+
+
+
 class GPTLanguageModel(nn.Module):
     def __init__(self):
         super().__init__()
         self.token_embedding_table = nn.Embedding(vocab_size, n_embd)
         self.position_embedding_table = nn.Embedding(block_size, n_embd)
-        self.sa_head = Head(n_embd)
+        self.sa_heads = MultiHeadAttention(4, n_embd//4)
         self.lm_head = nn.Linear(n_embd, vocab_size)
 
     def forward(self, idx, targets=None):
@@ -95,7 +107,7 @@ class GPTLanguageModel(nn.Module):
         tok_emb = self.token_embedding_table(idx)
         pos_emb = self.position_embedding_table(torch.arange(T, device=device))
         x = tok_emb + pos_emb
-        x = self.sa_head(x)
+        x = self.sa_heads(x)
         logits = self.lm_head(x)
         
         if targets is None:
@@ -135,12 +147,11 @@ for iter in range(max_iters):
 
 context = torch.zeros((1, 1), dtype=torch.long, device=device)
 generated_text = decode(m.generate(context, max_new_tokens=500)[0].tolist())
-
 print("\n")
 print(generated_text)
 print("\n")
 # Save the generated text to milestone2.txt
-with open("milestone3.txt", "w") as f:
+with open("milestone4.txt", "w") as f:
     f.write(generated_text)
 
-print("Generated text saved to milestone3.txt")
+print("Generated text saved to milestone4.txt")
