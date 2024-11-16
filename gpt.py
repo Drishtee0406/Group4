@@ -3,7 +3,7 @@ import numpy
 
 batch_size = 32 # how many independent sequences will we process in parallel?
 block_size = 8 # what is the maximum context length for predictions?
-
+#comment
 
 with open('input.txt', 'r', encoding='utf-8') as f:
     text = f.read()
